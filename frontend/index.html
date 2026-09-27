@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpsPilot AI</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="glow glow-a"></div><div class="glow glow-b"></div>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand"><div class="brand-icon">O</div><div><b>OpsPilot</b><small>AI OPERATIONS</small></div></div>
+    <nav>
+      <a class="active" href="#overview">◈ <span>Overview</span></a>
+      <a href="#topology">⌘ <span>Infrastructure</span></a>
+      <a href="#incidents">⚠ <span>Incidents</span></a>
+      <a href="#ai">✦ <span>AI Copilot</span></a>
+      <a href="#events">↯ <span>Live Events</span></a>
+    </nav>
+    <div class="side-bottom">
+      <div class="env"><i></i><div><b>Production</b><small>AWS · ap-south-1</small></div></div>
+      <div class="me"><div class="avatar">NK</div><div><b>Nidhi Kumari</b><small>Cloud / DevOps</small></div></div>
+    </div>
+  </aside>
+
+  <main>
+    <header>
+      <div><p class="eyebrow">OPERATIONS COMMAND CENTER</p><h1>Good afternoon, Nidhi.</h1></div>
+      <div class="header-actions"><span class="live"><i></i> LIVE</span><span id="clock">--:--:--</span></div>
+    </header>
+
+    <section id="overview" class="hero-grid reveal">
+      <article class="panel hero">
+        <div class="hero-copy">
+          <p class="eyebrow">SYSTEM HEALTH</p>
+          <h2>Infrastructure is stable, <em>one service needs attention.</em></h2>
+          <p>OpsPilot brings service health, incidents, deployment signals and AI-assisted troubleshooting into one operational view.</p>
+          <div class="actions"><a class="btn primary" href="#incidents">Investigate incident</a><a class="btn" href="#topology">View topology</a></div>
+        </div>
+        <div class="health"><div class="health-ring"></div><div><strong id="healthScore">92%</strong><span>HEALTH</span></div></div>
+      </article>
+
+      <article class="panel priority">
+        <div class="panel-head"><div><p class="eyebrow">AI SIGNAL</p><h3>Current priority</h3></div><span class="ai-tag">✦ AI</span></div>
+        <h4 id="signalTitle">Checkout API degradation detected</h4>
+        <p>Operational signals suggest database connection pressure shortly after the latest deployment.</p>
+        <div class="confidence"><div><span>Confidence</span><b>87%</b></div><div class="bar"><i></i></div></div>
+        <a href="#ai">Open AI analysis →</a>
+      </article>
+    </section>
+
+    <section class="stats reveal">
+      <article class="panel stat"><span class="icon violet">◈</span><div><small>Total services</small><strong id="serviceCount">3</strong><p>Production workloads</p></div></article>
+      <article class="panel stat"><span class="icon amber">⚠</span><div><small>Active incidents</small><strong id="incidentCount">2</strong><p>1 requires investigation</p></div></article>
+      <article class="panel stat"><span class="icon green">✓</span><div><small>Healthy services</small><strong id="healthyCount">2</strong><p>Responding normally</p></div></article>
+      <article class="panel stat"><span class="icon blue">↑</span><div><small>Latest release</small><strong>v2.3.1</strong><p>14 minutes before alert</p></div></article>
+    </section>
+
+    <section class="two-col reveal">
+      <article id="topology" class="panel topology-card">
+        <div class="panel-head"><div><p class="eyebrow">LIVE TOPOLOGY</p><h3>Production service map</h3></div><span class="pill">EKS CLUSTER</span></div>
+        <div class="topology">
+          <div class="row center"><div class="node ok"><small>EDGE</small><b>Application Load Balancer</b><span>healthy</span></div></div>
+          <div class="line"></div>
+          <div class="row services" id="serviceNodes"></div>
+          <div class="line short"></div>
+          <div class="row center"><div class="node warn"><small>DATABASE</small><b>RDS PostgreSQL</b><span>connections 93%</span></div></div>
+        </div>
+      </article>
+
+      <article id="ai" class="panel ai-card">
+        <div class="panel-head"><div><p class="eyebrow">OPSPILOT INTELLIGENCE</p><h3>AI incident analysis</h3></div><span class="spark">✦</span></div>
+        <div class="analysis"><small>PROBABLE CAUSE</small><b>Database connection pool exhaustion</b></div>
+        <div class="box"><small>EVIDENCE</small><ul><li>RDS connections reached 93%</li><li>HTTP 500 errors increased</li><li>Backend pod restarted 3 times</li><li>v2.3.1 deployed shortly before incident</li></ul></div>
+        <div class="box"><small>RECOMMENDED NEXT STEP</small><p>Inspect application connection pooling and active PostgreSQL sessions before deciding whether rollback is required.</p></div>
+        <button id="openRecommendedRunbook" class="btn primary full">Open recommended runbook</button>
+      </article>
+    </section>
+
+    <section id="incidents" class="panel incident-panel reveal">
+      <div class="panel-head"><div><p class="eyebrow">INCIDENT COMMAND CENTER</p><h3>Active incidents</h3></div><span class="pill"><i class="amber-dot"></i> MONITORING</span></div>
+      <div id="incidentList" class="incident-list"></div>
+    </section>
+
+    <section id="events" class="two-col bottom reveal">
+      <article class="panel timeline-card">
+        <div class="panel-head"><div><p class="eyebrow">LIVE EVENTS</p><h3>Operational timeline</h3></div></div>
+        <div class="timeline">
+          <div class="event red"><time>13:08</time><i></i><p><b>Incident triggered</b><span>checkout-api moved to degraded</span></p></div>
+          <div class="event amber-event"><time>13:07</time><i></i><p><b>Pod restart detected</b><span>checkout-api-7c8f restarted</span></p></div>
+          <div class="event amber-event"><time>13:04</time><i></i><p><b>RDS connections increased</b><span>Connection utilization reached 93%</span></p></div>
+          <div class="event green-event"><time>12:58</time><i></i><p><b>Deployment completed</b><span>checkout-api:v2.3.1</span></p></div>
+        </div>
+      </article>
+
+      <article class="panel delivery">
+        <div class="panel-head"><div><p class="eyebrow">DELIVERY STATUS</p><h3>Deployment flow</h3></div></div>
+        <div class="flow"><div><i>✓</i><b>GitHub</b><small>main merged</small></div><span></span><div><i>✓</i><b>Jenkins</b><small>pipeline passed</small></div><span></span><div><i>✓</i><b>ECR</b><small>image pushed</small></div><span></span><div><i>●</i><b>Argo CD</b><small>planned phase</small></div></div>
+        <p class="note">Demo operational data for Phase 1. Real AWS, EKS, CloudWatch and Argo CD integrations will replace these placeholders as we build the project.</p>
+      </article>
+    </section>
+
+    <footer><span>OpsPilot AI · DevOps Incident Intelligence Platform</span><span>Phase 1 · Local Development</span></footer>
+  </main>
+</div>
+<script src="script.js"></script>
+
+<div class="modal-backdrop" id="incidentModal" aria-hidden="true">
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="incidentModalTitle">
+    <div class="modal-top">
+      <div>
+        <span class="section-kicker">INCIDENT MANAGEMENT</span>
+        <h3 id="incidentModalTitle">Create new incident</h3>
+      </div>
+      <button class="modal-close" id="closeIncidentModal" type="button" aria-label="Close">x</button>
+    </div>
+
+    <form id="incidentForm">
+      <div class="form-grid two">
+        <label>
+          <span>Service</span>
+          <select id="incidentService" required></select>
+        </label>
+
+        <label>
+          <span>Status</span>
+          <select id="incidentStatus" required>
+            <option value="investigating" selected>Investigating</option>
+            <option value="open">Open</option>
+            <option value="monitoring">Monitoring</option>
+            <option value="resolved">Resolved</option>
+          </select>
+        </label>
+      </div>
+
+      <label>
+        <span>Incident title</span>
+        <input id="incidentTitle" type="text" minlength="5" maxlength="200"
+               placeholder="e.g. Checkout API high error rate" required>
+      </label>
+
+      <div class="severity-group">
+        <span>Severity</span>
+        <div class="severity-options">
+          <label class="severity-option low">
+            <input type="radio" name="severity" value="low">
+            <span>Low</span>
+          </label>
+          <label class="severity-option medium">
+            <input type="radio" name="severity" value="medium">
+            <span>Medium</span>
+          </label>
+          <label class="severity-option high">
+            <input type="radio" name="severity" value="high" checked>
+            <span>High</span>
+          </label>
+          <label class="severity-option critical">
+            <input type="radio" name="severity" value="critical">
+            <span>Critical</span>
+          </label>
+        </div>
+      </div>
+
+      <label>
+        <span>Summary</span>
+        <textarea id="incidentSummary" rows="4" minlength="10" maxlength="1000"
+                  placeholder="Describe what is happening and the user impact..." required></textarea>
+      </label>
+
+      <label>
+        <span>Evidence <small>one item per line</small></span>
+        <textarea id="incidentEvidence" rows="4"
+                  placeholder="HTTP 500 errors increased&#10;CPU reached 91%&#10;Pod restarted twice"></textarea>
+      </label>
+
+      <label>
+        <span>Recent deployment <small>optional</small></span>
+        <input id="incidentDeployment" type="text"
+               placeholder="e.g. checkout-api:v2.3.2">
+      </label>
+
+      <div class="modal-footer">
+        <p class="form-hint">High and critical incidents automatically mark the selected service as degraded.</p>
+        <div>
+          <button class="button ghost" id="cancelIncidentModal" type="button">Cancel</button>
+          <button class="button primary" id="submitIncident" type="submit">Create incident</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+
+<div class="incident-drawer-backdrop" id="incidentDrawerBackdrop" aria-hidden="true"></div>
+
+<aside class="incident-drawer" id="incidentDrawer" aria-hidden="true" aria-labelledby="incidentDrawerTitle">
+  <div class="drawer-top">
+    <div>
+      <span class="section-kicker">INCIDENT DETAILS</span>
+      <h3 id="incidentDrawerTitle">Loading incident...</h3>
+    </div>
+    <button class="drawer-close" id="closeIncidentDrawer" type="button" aria-label="Close">x</button>
+  </div>
+
+  <div class="drawer-meta">
+    <span class="drawer-id" id="drawerIncidentId">INC-----</span>
+    <span class="severity" id="drawerSeverity">-</span>
+    <span class="drawer-status" id="drawerStatus">-</span>
+  </div>
+
+  <section class="drawer-section">
+    <small>SUMMARY</small>
+    <p id="drawerSummary">Loading...</p>
+  </section>
+
+  <section class="drawer-section">
+    <small>DETECTED AT</small>
+    <p id="drawerDetectedAt">-</p>
+  </section>
+
+  <section class="drawer-section">
+    <small>RECENT DEPLOYMENT</small>
+    <p id="drawerDeployment">No deployment linked</p>
+  </section>
+
+  <section class="drawer-section">
+    <small>EVIDENCE</small>
+    <ul class="drawer-evidence" id="drawerEvidence"></ul>
+  </section>
+
+  <section class="drawer-ai-live" id="drawerAISection">
+    <div class="drawer-ai-heading">
+      <span>AI ANALYSIS</span>
+      <strong id="aiStateBadge">Ready</strong>
+    </div>
+
+    <div id="aiEmptyState">
+      <p>Generate an AI-assisted incident analysis using the stored incident evidence and deployment context.</p>
+      <button class="button primary full" id="analyzeIncidentBtn" type="button">Analyze with OpsPilot AI</button>
+    </div>
+
+    <div class="ai-loading" id="aiLoadingState" hidden>
+      <div class="ai-loader"></div>
+      <p>Analyzing incident evidence with Amazon Bedrock...</p>
+    </div>
+
+    <div class="ai-result" id="aiResultState" hidden>
+      <div class="ai-confidence">
+        <span>Confidence</span>
+        <strong id="aiConfidence">--%</strong>
+      </div>
+      <div class="bar"><span id="aiConfidenceBar" style="width:0%"></span></div>
+
+      <div class="ai-result-block">
+        <small>SUMMARY</small>
+        <p id="aiSummary"></p>
+      </div>
+
+      <div class="ai-result-block">
+        <small>PROBABLE CAUSE</small>
+        <p id="aiProbableCause"></p>
+      </div>
+
+      <div class="ai-result-block">
+        <small>IMPACT</small>
+        <p id="aiImpact"></p>
+      </div>
+
+      <div class="ai-result-block">
+        <small>RECOMMENDED ACTIONS</small>
+        <ol id="aiActions"></ol>
+      </div>
+
+      <div class="ai-result-block">
+        <small>ROLLBACK CONSIDERATION</small>
+        <p id="aiRollback"></p>
+      </div>
+
+      <div class="ai-grounding" id="aiGrounding">
+        <div class="ai-grounding-icon">RAG</div>
+        <div>
+          <small>GROUNDED WITH RUNBOOK</small>
+          <strong id="aiRunbookTitle">Loading source...</strong>
+          <div class="semantic-match-row">
+            <span>Semantic match</span>
+            <strong id="aiSemanticMatch">--</strong>
+          </div>
+          <span>Retrieved from PostgreSQL using semantic vector search.</span>
+        </div>
+      </div>
+
+      <div class="ai-meta">
+        <span id="aiModel"></span>
+        <span id="aiUsage"></span>
+        <span id="aiLatency"></span>
+      </div>
+
+      <button class="button ghost full" id="reanalyzeIncidentBtn" type="button">Re-run analysis</button>
+    </div>
+  </section>
+</aside>
+
+
+<div class="runbook-modal-backdrop" id="runbookModalBackdrop" hidden></div>
+<section class="runbook-modal" id="runbookModal" hidden aria-hidden="true">
+  <div class="runbook-modal-card">
+    <div class="runbook-modal-header">
+      <div>
+        <small>RECOMMENDED RUNBOOK</small>
+        <h3 id="runbookModalTitle">Loading...</h3>
+      </div>
+      <button type="button" class="runbook-close" id="closeRunbookModal" aria-label="Close runbook">×</button>
+    </div>
+
+    <div class="runbook-meta">
+      <span id="runbookProblemType"></span>
+    </div>
+
+    <div class="runbook-section">
+      <small>DESCRIPTION</small>
+      <p id="runbookDescription"></p>
+    </div>
+
+    <div class="runbook-section">
+      <small>KEYWORDS</small>
+      <div class="runbook-keywords" id="runbookKeywords"></div>
+    </div>
+
+    <div class="runbook-section">
+      <small>TROUBLESHOOTING STEPS</small>
+      <div class="runbook-content" id="runbookContent"></div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

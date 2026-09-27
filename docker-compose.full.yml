@@ -1,0 +1,58 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: opspilot-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: opspilot
+      POSTGRES_USER: opspilot
+      POSTGRES_PASSWORD: opspilot_local_dev_only
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init/01-enable-vector.sql:/docker-entrypoint-initdb.d/01-enable-vector.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U opspilot -d opspilot"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: opspilot-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://opspilot:opspilot_local_dev_only@db:5432/opspilot
+      AWS_REGION: ap-south-1
+      AWS_PROFILE: opspilot
+    volumes:
+      - type: bind
+        source: ${USERPROFILE}/.aws
+        target: /home/opspilot/.aws
+        read_only: true
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  postgres_data:
+    external: true
+    name: opspilot-ai_opspilot_postgres_data

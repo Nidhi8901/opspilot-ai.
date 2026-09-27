@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+venv/
+.venv/
+
+# Secrets / local config
+.env
+.env.*
+!.env.example
+.aws/
+*.pem
+*.key
+
+# Local backups
+backups/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Local artifacts
+dist/
+build/
+*.egg-info/
+
+# Terraform local state (future)
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfvars
+!*.tfvars.example
+
+# Misc
+docker-compose.override.yml
+
+# Temporary / generated files
+*.backup
+*.tfplan
+tfplan
+eks.tfplan
+eks-recovery.tfplan
+
+# Temporary IAM policy files created during setup
+opspilot-bedrock-policy.json
+opspilot-pod-trust.json
+alb-pod-trust.json
+aws-load-balancer-controller-policy.json
