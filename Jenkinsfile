@@ -56,6 +56,7 @@ pipeline {
                     --network "$NET" \
                     --volumes-from jenkins \
                     -w "$WORKSPACE" \
+                    -e PYTHONPATH="$WORKSPACE" \
                     -e DATABASE_URL="postgresql+psycopg://opspilot:opspilot@db:5432/opspilot" \
                     -e AWS_REGION="ap-south-1" \
                     -e AWS_DEFAULT_REGION="ap-south-1" \
@@ -66,42 +67,18 @@ pipeline {
                       pip install --no-cache-dir -r backend/requirements.txt >/dev/null
 
                       python - <<PY
-import importlib
-import pkgutil
 from sqlalchemy import text
-import backend.app
-
-base = None
-engine = None
-
-for info in pkgutil.walk_packages(backend.app.__path__, backend.app.__name__ + "."):
-    try:
-        module = importlib.import_module(info.name)
-    except Exception:
-        continue
-
-    candidate_base = getattr(module, "Base", None)
-    if candidate_base is not None and hasattr(candidate_base, "metadata"):
-        base = candidate_base
-
-    candidate_engine = getattr(module, "engine", None)
-    if candidate_engine is not None and hasattr(candidate_engine, "begin"):
-        engine = candidate_engine
-
-    if base is not None and engine is not None:
-        break
-
-if base is None or engine is None:
-    raise RuntimeError("Could not locate SQLAlchemy Base and engine")
+from backend.database import Base, engine
+import backend.models
 
 with engine.begin() as conn:
     conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
 
-base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)
 print("TEST_DATABASE_READY")
 PY
 
-                      uvicorn backend.app.main:app \
+                      uvicorn backend.main:app \
                         --host 127.0.0.1 \
                         --port 8000 \
                         >/tmp/opspilot-test-app.log 2>&1 &
@@ -128,6 +105,7 @@ for attempt in range(30):
     except Exception:
         time.sleep(1)
 else:
+    print(open("/tmp/opspilot-test-app.log").read())
     raise SystemExit("OpsPilot test server did not become ready")
 PY
 
