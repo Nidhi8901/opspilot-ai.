@@ -1,135 +1,161 @@
-# OpsPilot AI Architecture
+# OpsPilot AI — Architecture
 
-## 1. Application responsibility
+## 1. System responsibility
 
-OpsPilot AI is an incident-response assistant. It accepts or displays incident context, retrieves a relevant operational runbook, asks Amazon Bedrock for a grounded analysis, stores the result, and presents it to the engineer.
+OpsPilot AI is an AI-assisted incident-response platform. It collects incident context, retrieves the most relevant operational runbook using semantic vector search, asks Amazon Bedrock for a grounded analysis, stores the response, and presents the result to an engineer.
 
-It does not automatically restart pods, roll back deployments, modify AWS resources, or apply infrastructure changes.
+The system deliberately does **not** automatically restart pods, modify AWS infrastructure, or trigger rollbacks.
 
-## 2. Local runtime
+## 2. As-built cloud architecture
 
-The current local stack consists of:
+```mermaid
+flowchart LR
+    User[Engineer / Browser] --> PF[kubectl port-forward]
+    PF --> Service[Kubernetes ClusterIP Service]
+    Service --> Pod[OpsPilot FastAPI Pod on EKS]
 
-- Browser
-- FastAPI application container
-- PostgreSQL + pgvector container
-- Amazon Titan Text Embeddings V2
-- Amazon Nova Lite through Amazon Bedrock
-- Docker persistent volume
-- Alembic migrations
+    Pod --> RDS[(RDS PostgreSQL + pgvector)]
+    Pod --> Titan[Amazon Titan Text Embeddings V2]
+    Pod --> Nova[Amazon Nova Lite]
 
-### Request path
+    SA[Kubernetes ServiceAccount] --> PI[EKS Pod Identity]
+    PI --> Role[IAM workload role]
+    Role --> Titan
+    Role --> Nova
 
-1. A user opens an incident in the dashboard.
-2. FastAPI reads incident and service data from PostgreSQL.
-3. OpsPilot creates or reuses the incident embedding.
-4. PostgreSQL pgvector performs cosine similarity search against embedded runbooks.
-5. The highest relevant runbook is retrieved.
-6. Incident context + runbook context are sent to Amazon Nova Lite.
-7. The structured analysis is stored in `ai_analysis`.
-8. The UI displays the analysis, grounding source, semantic score, token usage, and latency.
+    ECR[Amazon ECR image] --> Pod
 
-## 3. Data model
+    GitOps[opspilot-gitops repo] --> Argo[Argo CD Core]
+    Argo --> Pod
 
-Core entities:
+    EKSCW[EKS control-plane logs] --> CW[CloudWatch]
+    RDSCW[RDS PostgreSQL logs] --> CW
+```
 
-- `services`
-- `incidents`
-- `deployments`
-- `runbooks`
-- `ai_analysis`
+For the portfolio demo, external access was intentionally kept private. A public load balancer was not added; the application was accessed with `kubectl port-forward` through the Kubernetes `ClusterIP` service.
 
-Vector data:
+## 3. Request flow
 
-- `runbooks.embedding` -> `vector(512)`
-- `incidents.embedding` -> `vector(512)`
+1. The engineer opens the dashboard through the local port-forward.
+2. FastAPI reads services, incidents, deployments, runbooks, and stored AI analyses from PostgreSQL.
+3. When the engineer requests an incident analysis, OpsPilot obtains or reuses the incident embedding.
+4. PostgreSQL + pgvector performs cosine similarity search against embedded runbooks.
+5. The most relevant runbook is retrieved with a semantic match score.
+6. The incident evidence and selected runbook are supplied to Amazon Nova Lite.
+7. The Bedrock response is validated as structured JSON.
+8. The analysis is persisted in `ai_analysis`.
+9. The UI displays summary, probable cause, impact, recommended actions, rollback consideration, confidence, runbook source, token usage, and latency.
 
-## 4. AI design
+## 4. AI / semantic retrieval
 
-### Embedding model
+### Embeddings
 
-Amazon Titan Text Embeddings V2 is used to create normalized 512-dimensional vectors.
+Amazon Titan Text Embeddings V2 is used with 512-dimensional vectors.
+
+Vector data is stored in PostgreSQL through pgvector.
 
 ### Retrieval
 
-Similarity is calculated in PostgreSQL using pgvector cosine distance.
+OpsPilot performs semantic similarity retrieval so runbooks can match an incident by meaning rather than only exact keyword overlap.
 
 ### Generation
 
 Amazon Nova Lite receives:
 
 - service context
-- incident metadata
+- environment and service status
+- incident ID/title/severity/status
 - incident summary
 - evidence
 - recent deployment information
 - retrieved runbook context
 
-The response is constrained to structured JSON.
+The system prompt instructs the model to:
 
-## 5. Why RAG instead of a generic chatbot
+- use only supplied evidence
+- avoid inventing logs/metrics/deployments
+- distinguish probable from confirmed causes
+- treat runbooks as guidance rather than proof
+- return structured JSON
+- avoid implying production changes were executed
 
-A generic chatbot could produce troubleshooting advice without knowing the project's operational procedures.
+## 5. Data model
 
-RAG allows OpsPilot to ground recommendations in stored runbooks so an engineer can see which source influenced the analysis.
+Core tables:
 
-## 6. Planned production deployment
+- `services`
+- `incidents`
+- `deployments`
+- `runbooks`
+- `ai_analysis`
+- `alembic_version`
 
-The target AWS design is:
+Vector fields use `vector(512)` for semantic retrieval.
 
-```mermaid
-flowchart TD
-    User --> ALB
-    ALB --> EKS
-    EKS --> API[OpsPilot API]
-    API --> RDS[(RDS PostgreSQL + pgvector)]
-    API --> Bedrock
-    API --> CloudWatch
+## 6. Kubernetes design
 
-    GitHub --> GHA[GitHub Actions]
-    GitHub --> Jenkins
-    Jenkins --> ECR
-    Jenkins --> GitOpsRepo[GitOps Repo]
-    GitOpsRepo --> ArgoCD
-    ArgoCD --> EKS
+The final deployment used:
 
-    Terraform --> AWS[VPC + IAM + EKS + ECR + RDS]
+- namespace: `opspilot`
+- deployment: `opspilot-api`
+- service: `opspilot-api`
+- service type: `ClusterIP`
+- service account: `opspilot-api`
+- readiness probe: `/health`
+- liveness probe: `/health`
+- CPU request: `100m`
+- memory request: `128Mi`
+- CPU limit: `500m`
+- memory limit: `512Mi`
+
+The database URL was provided through the `opspilot-secrets` Kubernetes Secret and not stored in Git.
+
+## 7. AWS authentication
+
+The EKS workload used Pod Identity.
+
+```text
+Kubernetes service account
+        ↓
+EKS Pod Identity association
+        ↓
+IAM workload role
+        ↓
+Amazon Bedrock runtime
 ```
 
-## 7. CI/CD responsibility split
+No static AWS access keys were placed in the application container or Kubernetes manifests.
 
-### GitHub Actions
+## 8. GitOps architecture
 
-Planned for lightweight pull-request validation:
+```mermaid
+flowchart LR
+    Git[opspilot-gitops] --> Argo[Argo CD Core]
+    Argo --> Desired[Kubernetes desired state]
+    Desired --> EKS[Amazon EKS]
+```
 
-- Python checks
-- tests
-- Terraform formatting / validation
-- YAML validation
+Argo CD Core was selected because the portfolio cluster used one small worker node with limited pod capacity.
 
-### Jenkins
+The validated application state reached:
 
-Planned for main CI:
+```text
+SYNC     HEALTH
+Synced   Healthy
+```
 
-- test execution
-- SonarQube analysis
-- Docker build
-- Trivy image scan
-- ECR push
-- GitOps repository update
+## 9. Demo lifecycle
 
-### Argo CD
+The AWS environment was live long enough to validate:
 
-Argo CD will own deployment synchronization from Git to EKS.
+- EKS workload health
+- RDS connectivity
+- pgvector
+- Bedrock invocation through Pod Identity
+- ECR image deployment
+- Argo CD synchronization
+- Kubernetes probes
+- CloudWatch log groups
+- application UI and API
 
-Jenkins will not directly run `kubectl apply`.
-
-## 8. AWS authentication
-
-### Local development
-
-The Docker API container reads the `opspilot` AWS profile through a read-only host mount.
-
-### Production
-
-The local profile mount will be removed. EKS workloads will use IAM workload identity / Pod Identity with least-privilege access to required AWS services.
+After screenshots and screen recordings were captured, the cloud resources were intentionally deleted to avoid ongoing infrastructure charges.

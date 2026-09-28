@@ -1,152 +1,290 @@
 # OpsPilot AI
 
-OpsPilot AI is an AI-assisted DevOps incident response and runbook platform built to help engineers triage incidents using operational evidence, semantic runbook retrieval, and grounded recommendations.
+[![OpsPilot CI](https://github.com/Nidhi8901/opspilot-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/Nidhi8901/opspilot-ai/actions)
+[![Python](https://img.shields.io/badge/Python-3.13-blue)](#technology-stack)
+[![FastAPI](https://img.shields.io/badge/FastAPI-API-009688)](#technology-stack)
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-EKS-326CE5)](#cloud-deployment)
+[![Amazon Bedrock](https://img.shields.io/badge/Amazon%20Bedrock-AI-orange)](#ai--rag-flow)
 
-The project is intentionally designed as a DevOps/Cloud portfolio project rather than a generic CRUD application. It demonstrates incident workflows, containerization, PostgreSQL + pgvector, Amazon Bedrock, semantic RAG, database migrations, health checks, and automated tests. The cloud deployment layer will add Terraform, EKS, RDS, ECR, Argo CD, Jenkins, GitHub Actions, and CloudWatch.
+**OpsPilot AI** is an AI-assisted cloud incident response and runbook platform built to help engineers triage operational incidents using structured evidence, semantic runbook retrieval, and grounded AI recommendations.
 
-## Why this project exists
+The project combines a production-style FastAPI application with PostgreSQL + pgvector, Amazon Bedrock, Docker, Kubernetes on Amazon EKS, Amazon RDS, Amazon ECR, GitHub Actions, Jenkins, SonarQube, Trivy, and Argo CD GitOps.
 
-During incidents, engineers often jump between logs, metrics, deployments, runbooks, and multiple tools before forming an initial hypothesis.
+> The AI is advisory only. OpsPilot does not automatically change production infrastructure, restart workloads, or roll back deployments.
 
-OpsPilot AI centralizes incident context and uses AI to help with:
+---
 
-- incident summarization
-- probable-cause analysis
-- impact interpretation
-- ordered troubleshooting recommendations
-- rollback considerations
-- semantic retrieval of relevant runbooks
+## Demo
 
-The AI is advisory only. It does not automatically make production changes.
+### Operations dashboard
 
-## Current status
+![OpsPilot dashboard](docs/assets/01-dashboard-overview.png)
 
-### Implemented
+### AI-assisted incident investigation
 
-- FastAPI backend
-- custom incident command-center frontend
-- PostgreSQL persistence
-- pgvector 0.8.x
-- runbook storage
-- Amazon Titan Text Embeddings V2
-- semantic runbook retrieval using cosine similarity
-- Amazon Nova Lite through Amazon Bedrock
-- grounded AI incident analysis
-- stored AI analysis history
-- incident embedding cache
-- semantic match score
-- Alembic database migrations
+| Incident analysis | Recommended runbook |
+|---|---|
+| ![AI incident analysis](docs/assets/03-ai-analysis.png) | ![Recommended runbook](docs/assets/04-recommended-runbook.png) |
+
+### DevSecOps and GitOps evidence
+
+| Jenkins CI | Argo CD + EKS |
+|---|---|
+| ![Jenkins pipeline](docs/assets/05-jenkins-pipeline.png) | ![Argo CD and EKS health](docs/assets/07-argocd-eks-health.png) |
+
+Additional screenshots are available in [`docs/assets`](docs/assets) and are explained in [`docs/demo-evidence.md`](docs/demo-evidence.md).
+
+---
+
+## Why I built it
+
+During a production incident, engineers often have to correlate service health, recent deployments, error signals, database pressure, and troubleshooting runbooks before they can form an initial hypothesis.
+
+OpsPilot AI brings those signals into one incident workflow:
+
+1. display the incident and operational evidence
+2. convert incident/runbook text into embeddings
+3. retrieve the most relevant runbook with pgvector cosine similarity
+4. send the incident context + retrieved runbook to Amazon Bedrock
+5. return a structured analysis with probable cause, impact, recommended actions, rollback consideration, confidence, token usage, and latency
+6. keep the engineer in control of the final action
+
+---
+
+## Key capabilities
+
+- Incident command-center dashboard
+- Service and deployment context
+- Incident creation and incident detail workflow
+- Amazon Bedrock incident analysis using Amazon Nova Lite
+- Semantic runbook retrieval using Amazon Titan Text Embeddings V2
+- PostgreSQL + pgvector vector search
+- Stored AI analysis history
+- Semantic match score exposed in the UI
 - Dockerized FastAPI application
-- Dockerized PostgreSQL + pgvector
-- container health checks
-- persistent Docker volume
-- local Docker Bedrock authentication through a read-only AWS profile mount
-- smoke tests with pytest + httpx
-
-### Planned cloud / DevOps layer
-
-- Terraform
-- Amazon VPC
-- Amazon ECR
-- Amazon EKS
+- Amazon EKS deployment
 - Amazon RDS for PostgreSQL
-- IAM / workload identity
-- Kubernetes manifests
-- HPA and resource controls
-- GitHub Actions
-- Jenkins
-- Argo CD / GitOps
-- CloudWatch logs, metrics, and alarms
-- incident simulation and production-style observability
+- Amazon ECR image repository
+- IAM Pod Identity for Bedrock access from EKS
+- Kubernetes readiness/liveness probes and resource controls
+- Separate GitOps repository managed by Argo CD
+- GitHub Actions CI validation
+- Jenkins CI with isolated test database
+- SonarQube static analysis
+- Trivy container vulnerability scanning
+- EKS/RDS logging evidence through CloudWatch log groups
+- Cost-conscious demo access through `kubectl port-forward`
 
-## Local architecture
+---
+
+## Architecture
 
 ```mermaid
 flowchart LR
-    U[Browser] --> A[FastAPI]
-    A --> P[(PostgreSQL + pgvector)]
-    A --> T[Amazon Titan Embeddings V2]
-    T --> P
-    P --> R[Semantic Runbook Match]
-    R --> N[Amazon Nova Lite]
-    A --> N
-    N --> P
+    U[Engineer / Browser] --> PF[kubectl port-forward]
+    PF --> SVC[Kubernetes ClusterIP Service]
+    SVC --> API[FastAPI on Amazon EKS]
+
+    API --> RDS[(Amazon RDS PostgreSQL + pgvector)]
+    API --> TITAN[Amazon Titan Embeddings V2]
+    API --> NOVA[Amazon Nova Lite]
+
+    SA[Kubernetes Service Account] --> PI[EKS Pod Identity]
+    PI --> IAM[IAM Role]
+    IAM --> TITAN
+    IAM --> NOVA
+
+    GH[GitHub - application repo] --> GHA[GitHub Actions]
+    GH --> J[Jenkins]
+    J --> SQ[SonarQube]
+    J --> TV[Trivy]
+    J --> IMG[Docker image validation]
+
+    ECR[Amazon ECR] --> API
+
+    GITOPS[GitHub - GitOps repo] --> ARGO[Argo CD Core]
+    ARGO --> API
+
+    EKSLOG[EKS control-plane logs] --> CW[CloudWatch]
+    RDSLOG[RDS PostgreSQL logs] --> CW
 ```
 
-## RAG flow
+The portfolio deployment intentionally used a `ClusterIP` service plus local port-forwarding instead of adding a public load balancer. This kept the demo architecture functional while avoiding another continuously billed resource.
+
+See [`docs/architecture.md`](docs/architecture.md) for the detailed request, AI, deployment, and GitOps flows.
+
+---
+
+## AI / RAG flow
 
 ```mermaid
 flowchart TD
-    I[Incident title + summary + evidence + deployment] --> E[Amazon Titan Embeddings V2]
-    E --> Q[512-dimensional incident embedding]
-    Q --> V[(PostgreSQL pgvector)]
-    V --> M[Cosine similarity search]
-    M --> RB[Most relevant runbook]
-    RB --> B[Amazon Bedrock / Nova Lite]
-    I --> B
-    B --> O[Grounded AI analysis]
-    O --> DB[(ai_analysis)]
+    I[Incident title + summary + evidence + deployment] --> IE[Incident embedding]
+    RB[Stored runbooks] --> RE[Runbook embeddings]
+
+    IE --> T[Amazon Titan Text Embeddings V2]
+    RE --> T
+
+    T --> PG[(PostgreSQL + pgvector)]
+    PG --> CS[Cosine similarity search]
+    CS --> MATCH[Most relevant runbook]
+
+    I --> N[Amazon Nova Lite]
+    MATCH --> N
+    N --> OUT[Structured incident analysis]
+    OUT --> DB[(ai_analysis)]
+    DB --> UI[Dashboard]
 ```
 
-## Planned AWS architecture
+The model prompt explicitly instructs the AI to use only the supplied incident/runbook context, distinguish a probable cause from a confirmed cause, and avoid implying that it performed production changes.
 
-```mermaid
-flowchart LR
-    Internet --> ALB[Application Load Balancer]
-    ALB --> EKS[Amazon EKS]
+---
 
-    EKS --> API[OpsPilot FastAPI]
-    API --> RDS[(Amazon RDS PostgreSQL + pgvector)]
-    API --> Bedrock[Amazon Bedrock]
-    API --> CW[Amazon CloudWatch]
+## CI, security scanning, and GitOps
 
-    GH[GitHub] --> GHA[GitHub Actions]
-    GH --> Jenkins[Jenkins CI]
-    Jenkins --> ECR[Amazon ECR]
-    Jenkins --> GitOps[GitOps Repository]
-    GitOps --> Argo[Argo CD]
-    Argo --> EKS
+### GitHub Actions
 
-    TF[Terraform] --> VPC[VPC / IAM / EKS / ECR / RDS]
+The repository runs CI on pushes and pull requests to `main`.
+
+The workflow:
+
+- starts PostgreSQL + pgvector
+- prepares the test schema
+- starts FastAPI
+- runs smoke tests
+- validates the Docker image build
+
+### Jenkins
+
+The Jenkins pipeline was validated successfully with these stages:
+
+```text
+Checkout SCM
+Checkout
+Python Tests
+SonarQube Analysis
+Docker Build
+Trivy Scan
+Post Actions
 ```
 
-> The AWS architecture above is the target deployment architecture. EKS, RDS, ECR, Argo CD, Jenkins, GitHub Actions, CloudWatch integration, and Terraform are not claimed as deployed until they are actually implemented.
+The test stage creates an isolated pgvector PostgreSQL container, prepares the schema, starts FastAPI, waits for `/health`, runs pytest, and removes temporary test resources afterward.
 
-## Core API endpoints
+SonarQube performs code-quality analysis. Trivy reports `HIGH` and `CRITICAL` image vulnerabilities. In this portfolio pipeline the Trivy stage is **reporting**, not a blocking security gate (`--exit-code 0`).
+
+### GitOps
+
+The separate repository [`opspilot-gitops`](https://github.com/Nidhi8901/opspilot-gitops) stores the Kubernetes desired state.
+
+Argo CD Core was installed in the EKS cluster and validated with:
+
+```text
+opspilot-ai   Synced   Healthy
+```
+
+The database connection secret was provisioned separately and was not committed to Git.
+
+See [`docs/cicd.md`](docs/cicd.md).
+
+---
+
+## Cloud deployment
+
+The validated AWS deployment used:
+
+- Amazon EKS
+- one managed `t3.small` worker node for the final demo
+- Amazon RDS PostgreSQL (`db.t3.micro`)
+- pgvector extension
+- Amazon ECR
+- Amazon Bedrock
+- Amazon Nova Lite
+- Amazon Titan Text Embeddings V2
+- EKS Pod Identity
+- private database access
+- CloudWatch log groups for EKS control-plane and RDS PostgreSQL logs
+- Kubernetes `ClusterIP` service
+- `kubectl port-forward` for demo access
+
+The live cloud environment was intentionally torn down after successful validation and evidence capture to avoid ongoing EKS, NAT Gateway, database, and related infrastructure charges.
+
+The GitHub repositories, Kubernetes manifests, screenshots, and screen recordings preserve the implementation evidence and make the design reproducible.
+
+---
+
+## Security decisions
+
+- No AWS access keys are stored in source code.
+- EKS used Pod Identity rather than static credentials.
+- The database URL was stored in a Kubernetes Secret and excluded from Git.
+- RDS was deployed privately and limited to the EKS security path.
+- ECR image tag immutability was enabled during the deployment.
+- `.env`, keys, local AWS configuration, and state files are ignored.
+- The AI is advisory and cannot directly mutate infrastructure.
+- Trivy scans the built image for high/critical vulnerabilities.
+- SonarQube analyzes application code quality.
+- The public-load-balancer layer was deliberately omitted for the portfolio demo.
+- The cloud environment was deleted after validation to control cost.
+
+See [`docs/security.md`](docs/security.md).
+
+---
+
+## Technology stack
+
+| Area | Technology |
+|---|---|
+| Backend | Python 3.13, FastAPI |
+| Frontend | HTML, CSS, JavaScript |
+| Database | PostgreSQL, SQLAlchemy, Alembic |
+| Vector search | pgvector |
+| AI generation | Amazon Bedrock, Amazon Nova Lite |
+| Embeddings | Amazon Titan Text Embeddings V2 |
+| Containers | Docker, Docker Compose |
+| Cloud | AWS, Amazon EKS, Amazon RDS, Amazon ECR |
+| Kubernetes | Deployments, Services, probes, resource requests/limits |
+| AWS workload auth | EKS Pod Identity + IAM |
+| CI | GitHub Actions, Jenkins |
+| Code quality | SonarQube |
+| Container security | Trivy |
+| GitOps | Argo CD Core |
+| Testing | pytest, httpx |
+| Observability evidence | CloudWatch log groups, health endpoint, Kubernetes status |
+
+---
+
+## API endpoints
 
 | Method | Endpoint | Purpose |
 |---|---|---|
-| GET | `/health` | API + database health |
-| GET | `/services` | list monitored services |
-| GET | `/incidents` | list incidents |
-| POST | `/incidents` | create an incident |
-| GET | `/incidents/{id}` | incident details |
-| GET | `/runbooks` | list runbooks |
-| GET | `/incidents/{id}/recommended-runbook` | semantic runbook retrieval |
-| POST | `/incidents/{id}/analyze` | grounded Bedrock analysis |
-| GET | `/incidents/{id}/analysis/latest` | latest stored AI analysis |
-| GET | `/deployments` | deployment records |
+| `GET` | `/health` | API/database health |
+| `GET` | `/services` | List monitored services |
+| `GET` | `/incidents` | List incidents |
+| `POST` | `/incidents` | Create an incident |
+| `GET` | `/incidents/{id}` | Incident details |
+| `GET` | `/runbooks` | List runbooks |
+| `GET` | `/incidents/{id}/recommended-runbook` | Semantic runbook retrieval |
+| `POST` | `/incidents/{id}/analyze` | Grounded Bedrock analysis |
+| `GET` | `/incidents/{id}/analysis/latest` | Latest stored analysis |
+| `GET` | `/deployments` | Deployment records |
+| `GET` | `/dashboard` | Operations dashboard |
 
-## Local development
+---
+
+## Run locally
 
 ### Requirements
 
 - Python 3.13+
 - Docker Desktop
 - AWS CLI
-- authenticated AWS profile named `opspilot`
-- Bedrock access in `ap-south-1`
+- an authenticated AWS profile if testing live Bedrock calls
+- Bedrock model access in the selected region
 
-### Start with Docker
+### Start the local stack
 
 ```bash
 docker compose -f docker-compose.full.yml up -d --build
-```
-
-Check:
-
-```bash
-docker compose -f docker-compose.full.yml ps
 ```
 
 Open:
@@ -155,76 +293,105 @@ Open:
 http://127.0.0.1:8000/dashboard
 ```
 
-API docs:
+Health check:
+
+```text
+http://127.0.0.1:8000/health
+```
+
+FastAPI docs:
 
 ```text
 http://127.0.0.1:8000/docs
 ```
 
-## Tests
-
-Install test dependencies:
+### Tests
 
 ```bash
-pip install pytest httpx
+pytest -q
 ```
 
-Run:
+The CI smoke tests intentionally avoid requiring a paid Bedrock generation call.
 
-```bash
-pytest
+---
+
+## GitOps repository
+
+Kubernetes desired state is stored separately:
+
+**Repository:** [`Nidhi8901/opspilot-gitops`](https://github.com/Nidhi8901/opspilot-gitops)
+
+The GitOps repository contains:
+
+```text
+apps/
+└── opspilot/
+    ├── deployment.yaml
+    └── kustomization.yaml
 ```
 
-The smoke test suite intentionally avoids triggering a paid Bedrock generation request.
+Argo CD owns synchronization between Git and the EKS workload. Application secrets are intentionally excluded.
 
-## Database migrations
+---
 
-Alembic is used for schema changes.
+## Engineering problems solved during the build
 
-```bash
-python -m alembic current
-python -m alembic upgrade head
-```
+This project included several real troubleshooting situations rather than only a happy-path deployment:
 
-For a new model change:
+- AWS CLI environment credentials overriding a valid profile
+- EKS instance-size and pod-capacity constraints
+- RDS database/pgvector initialization
+- migration baseline limitations on a fresh RDS database
+- Argo CD application project configuration
+- Kubernetes container merge causing a duplicate port binding
+- Jenkins smoke tests running before the API existed
+- Jenkins Python module path mismatch
+- safe teardown of EKS, RDS, NAT Gateway, ECR, IAM, CloudWatch, and the custom VPC while preserving the AWS default VPC
 
-```bash
-python -m alembic revision --autogenerate -m "describe migration"
-python -m alembic upgrade head
-```
+See [`docs/troubleshooting.md`](docs/troubleshooting.md) for the technical details and fixes.
 
-## Security decisions
+---
 
-- `.env` is not committed
-- AWS keys are not stored in source code
-- local Docker uses a read-only mount of the local AWS profile
-- production EKS will use AWS workload identity instead of a local profile
-- AI recommendations do not execute infrastructure changes automatically
-- PostgreSQL credentials currently used in Docker are local-development-only
+## Current project status
 
-## Technology stack
+**Application:** complete and demonstrated  
+**AI + semantic retrieval:** complete and demonstrated  
+**AWS deployment:** completed and validated  
+**CI / security scanning:** completed and validated  
+**GitOps:** completed and validated  
+**Cloud demo resources:** intentionally torn down after evidence capture  
+**GitHub source + deployment manifests:** retained
 
-**Application:** Python, FastAPI, HTML, CSS, JavaScript  
-**Data:** PostgreSQL, SQLAlchemy, Alembic, pgvector  
-**AI:** Amazon Bedrock, Amazon Nova Lite, Amazon Titan Text Embeddings V2  
-**Testing:** pytest, httpx  
-**Containers:** Docker, Docker Compose  
-**Planned DevOps:** Terraform, Kubernetes, EKS, ECR, RDS, Argo CD, Jenkins, GitHub Actions, CloudWatch
+---
 
-## Interview summary
+## Project boundaries
 
-> I built OpsPilot AI because I wanted a project directly related to DevOps work instead of another generic application. During incidents, engineers manually correlate service health, deployment history, logs, metrics, and runbooks. OpsPilot centralizes incident evidence, retrieves the most relevant runbook using semantic vector search, and sends that grounded context to Amazon Bedrock for an initial analysis and recommended troubleshooting steps. The AI remains advisory so production changes stay under human control.
+This is a portfolio-scale implementation designed to demonstrate DevOps, cloud, AI-assisted incident response, and GitOps concepts.
 
-## Roadmap
+Important boundaries:
 
-1. production-grade Docker hardening
-2. unit and integration test expansion
-3. Terraform AWS infrastructure
-4. ECR + EKS deployment
-5. RDS PostgreSQL migration
-6. Kubernetes probes, resources, and autoscaling
-7. GitHub Actions PR validation
-8. Jenkins CI pipeline
-9. Argo CD GitOps deployment
-10. CloudWatch ingestion and incident correlation
-11. security hardening and final demo
+- AI confidence is model-generated and should not be treated as a calibrated probability.
+- The AI does not autonomously remediate production systems.
+- The final Jenkins pipeline validates/test/scans/builds; the ECR deployment image was pushed during the deployment workflow rather than by the final Jenkins pipeline.
+- Kubernetes Secrets are not a replacement for a dedicated enterprise secrets-management platform.
+- The current migration history contains a baseline limitation documented in the troubleshooting notes.
+
+---
+
+## Documentation
+
+- [Architecture](docs/architecture.md)
+- [CI/CD and GitOps](docs/cicd.md)
+- [Security](docs/security.md)
+- [Troubleshooting and lessons learned](docs/troubleshooting.md)
+- [Demo evidence](docs/demo-evidence.md)
+
+---
+
+## Built by
+
+**Nidhi Kumari**  
+Cloud / DevOps
+
+- GitHub: [Nidhi8901](https://github.com/Nidhi8901)
+- LinkedIn: [nidhi-kumari-clouddevops](https://www.linkedin.com/in/nidhi-kumari-clouddevops)
