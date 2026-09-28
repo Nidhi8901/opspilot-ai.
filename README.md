@@ -40,11 +40,11 @@ Additional screenshots are available in [`docs/assets`](docs/assets) and are exp
 
 ### 🎥 End-to-end OpsPilot AI walkthrough
 
-▶️ [Play the OpsPilot AI walkthrough](https://github.com/Nidhi8901/opspilot-ai/blob/main/docs/videos/opspilot-demo.mp4)
+https://github.com/user-attachments/assets/30b8ec9b-2cae-4c13-b0ea-072d09726e20
 
 ### 🎥 FastAPI / API demonstration
 
-▶️ [Play the OpsPilot API demo](https://github.com/Nidhi8901/opspilot-ai/blob/main/docs/videos/opspilot-api-demo.mp4)
+https://github.com/user-attachments/assets/daa72f72-72cf-4e3b-86d9-3dc47e7ff7d9
 
 The recordings are silent project walkthroughs captured from the validated demo environment.
 
