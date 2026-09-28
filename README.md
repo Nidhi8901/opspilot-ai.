@@ -36,6 +36,15 @@ Additional screenshots are available in [`docs/assets`](docs/assets) and are exp
 
 ---
 
+## Video demos
+
+- [End-to-end OpsPilot AI walkthrough](docs/videos/opspilot-demo.mp4)
+- [FastAPI / API demonstration](docs/videos/opspilot-api-demo.mp4)
+
+The recordings are silent project walkthroughs captured from the validated demo environment.
+
+---
+
 ## Why I built it
 
 During a production incident, engineers often have to correlate service health, recent deployments, error signals, database pressure, and troubleshooting runbooks before they can form an initial hypothesis.
